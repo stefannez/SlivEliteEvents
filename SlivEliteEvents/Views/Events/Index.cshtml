@@ -32,6 +32,7 @@ ViewData["Title"] = "Event Calendar";
             </div>
             <div class="modal-footer">
                 <a id="editEvent" class="btn btn-primary">Edit</a>
+                <button type="button" class="btn btn-danger" id="deleteEvent">Delete</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -105,6 +106,7 @@ ViewData["Title"] = "Event Calendar";
                         $('#eventContact').text(info.event.extendedProps.contactPhone || 'N/A');
                         $('#eventStatus').text(info.event.extendedProps.status);
                         $('#editEvent').attr('href', '/Events/Edit/' + info.event.id);
+                        $('#deleteEvent').data('id', info.event.id); // Store event ID for deletion
 
                         var detailsModal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
                         detailsModal.show();
@@ -144,14 +146,39 @@ ViewData["Title"] = "Event Calendar";
             });
 
             calendar.render();
+
+            // Handle Delete button in modal
+            $('#deleteEvent').click(function () {
+                var eventId = $(this).data('id');
+                var detailsModal = bootstrap.Modal.getInstance(document.getElementById('eventDetailsModal'));
+                var confirmModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                confirmModal.show();
+                document.getElementById('confirmDelete').onclick = function () {
+                    fetch('/Events/Delete/' + eventId, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                calendar.getEventById(eventId).remove();
+                                confirmModal.hide();
+                                detailsModal.hide();
+                            } else {
+                                alert('Failed to delete event.');
+                            }
+                        })
+                        .catch(error => console.error('Error deleting event:', error));
+                };
+            });
+
+            $('#statusFilter').change(function () {
+                calendar.refetchEvents();
+            });
         } catch (e) {
             console.error('Error initializing calendar:', e);
             alert('Failed to initialize calendar. Check the console for details.');
         }
-
-        $('#statusFilter').change(function () {
-            calendar.refetchEvents();
-        });
     });
 </script>
 }

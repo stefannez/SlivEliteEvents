@@ -45,7 +45,7 @@ namespace SlivEliteEvents.Controllers
                 e.Status
             }).ToListAsync();
 
-            // Format dates in memory for FullCalendar
+            // Format dates and add colors for FullCalendar
             var formattedEvents = events.Select(e => new
             {
                 id = e.Id,
@@ -53,6 +53,20 @@ namespace SlivEliteEvents.Controllers
                 start = e.Start.ToString("o"), // ISO 8601 for FullCalendar
                 end = e.IsAllDay ? null : e.End?.ToString("o"),
                 allDay = e.IsAllDay,
+                backgroundColor = e.Status switch
+                {
+                    "Pending" => "#007bff", // Blue
+                    "Confirmed" => "#28a745", // Green
+                    "Completed" => "#dc3545", // Red
+                    _ => "#007bff" // Default to blue
+                },
+                borderColor = e.Status switch
+                {
+                    "Pending" => "#0056b3", // Darker blue
+                    "Confirmed" => "#1e7e34", // Darker green
+                    "Completed" => "#c82333", // Darker red
+                    _ => "#0056b3"
+                },
                 extendedProps = new
                 {
                     description = e.Description,
