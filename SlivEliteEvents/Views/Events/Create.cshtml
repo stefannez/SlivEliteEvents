@@ -1,23 +1,23 @@
 @model SlivEliteEvents.Models.Event
 @{
 ViewData["Title"] = "Create Event";
-var startDate = ViewBag.StartDate != null ? ViewBag.StartDate.ToString("yyyy-MM-dd") : DateTime.Today.ToString("yyyy-MM-dd");
+var startDate = ViewBag.StartDate != null ? ViewBag.StartDate : DateTime.Today.ToString("yyyy-MM-dd");
 }
 <h1>Create Event</h1>
-@if (!ViewData.ModelState.IsValid)
-{
-<div class="alert alert-danger">
-    <ul>
-        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-        {
-        <li>@error.ErrorMessage</li>
-        }
-    </ul>
-</div>
-}
-<form asp-action="Create" method="post">
+@* @if (!ViewData.ModelState.IsValid) *@
+@* { *@
+@* <div class="alert alert-danger"> *@
+@*     <ul> *@
+@*         @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors)) *@
+@*         { *@
+@*         <li>@error.ErrorMessage</li> *@
+@*         } *@
+@*     </ul> *@
+@* </div> *@
+@* } *@
+<form id="createForm" asp-action="Create" method="post">
     <div class="mb-3">
-        <label asp-for="Title" class="form-label"></label>
+        <label asp-for="Title" class="form-label required"></label>
         <input asp-for="Title" class="form-control" />
         <span asp-validation-for="Title" class="text-danger"></span>
     </div>
@@ -27,15 +27,30 @@ var startDate = ViewBag.StartDate != null ? ViewBag.StartDate.ToString("yyyy-MM-
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="StartTime" class="form-label"></label>
-        <input type="date" asp-for="StartTime" class="form-control" value="@startDate" />
-        <span asp-validation-for="StartTime" class="text-danger"></span>
+        <label asp-for="StartTime" class="form-label required"></label>
+        <div class="row">
+            <div class="col-md-6">
+                <input type="date" asp-for="StartTime" class="form-control" value="@startDate" />
+                <span asp-validation-for="StartTime" class="text-danger"></span>
+            </div>
+            <div class="col-md-6" id="startTimeContainer">
+                <input type="time" id="StartTimeTime" name="StartTimeTime" class="form-control" />
+                <span class="text-danger field-validation-error" data-valmsg-for="StartTimeTime"></span>
+            </div>
+        </div>
     </div>
-    .space-around
     <div class="mb-3" id="endTimeContainer">
         <label asp-for="EndTime" class="form-label"></label>
-        <input type="date" asp-for="EndTime" class="form-control" />
-        <span asp-validation-for="EndTime" class="text-danger"></span>
+        <div class="row">
+            <div class="col-md-6">
+                <input type="date" asp-for="EndTime" class="form-control" />
+                <span asp-validation-for="EndTime" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <input type="time" id="EndTimeTime" name="EndTimeTime" class="form-control" />
+                <span class="text-danger field-validation-error" data-valmsg-for="EndTimeTime"></span>
+            </div>
+        </div>
     </div>
     <div class="mb-3">
         <label asp-for="IsAllDay" class="form-label"></label>
@@ -43,12 +58,12 @@ var startDate = ViewBag.StartDate != null ? ViewBag.StartDate.ToString("yyyy-MM-
         <span asp-validation-for="IsAllDay" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="Location" class="form-label"></label>
+        <label asp-for="Location" class="form-label required"></label>
         <input asp-for="Location" class="form-control" />
         <span asp-validation-for="Location" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="GuestCapacity" class="form-label"></label>
+        <label asp-for="GuestCapacity" class="form-label required"></label>
         <input asp-for="GuestCapacity" class="form-control" type="number" />
         <span asp-validation-for="GuestCapacity" class="text-danger"></span>
     </div>
@@ -58,7 +73,7 @@ var startDate = ViewBag.StartDate != null ? ViewBag.StartDate.ToString("yyyy-MM-
         <span asp-validation-for="ContactPhone" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="Status" class="form-label"></label>
+        <label asp-for="Status" class="form-label required"></label>
         <select asp-for="Status" class="form-control">
             <option value="Pending">Pending</option>
             <option value="Confirmed">Confirmed</option>
@@ -67,28 +82,64 @@ var startDate = ViewBag.StartDate != null ? ViewBag.StartDate.ToString("yyyy-MM-
         <span asp-validation-for="Status" class="text-danger"></span>
     </div>
     <button type="submit" class="btn btn-primary">Create</button>
-    <a asp-action="Index" class="nav-link btn btn-secondary">Back to Calendar</a>
+    <a asp-action="Index" class="btn btn-secondary">Back to Calendar</a>
 </form>
 
 @section Scripts {
 <partial name="_ValidationScriptsPartial" />
 <script>
     $(function () {
+        const startTimeContainer = $('#startTimeContainer');
         const endTimeContainer = $('#endTimeContainer');
         const isAllDayCheckbox = $('#IsAllDay');
 
         // Initialize visibility
         if (isAllDayCheckbox.is(':checked')) {
+            startTimeContainer.hide();
             endTimeContainer.hide();
+            $('#EndTime').val('');
+            $('#StartTimeTime').val('');
+            $('#EndTimeTime').val('');
         }
 
-        // Toggle EndTime visibility
+        // Toggle time input visibility
         isAllDayCheckbox.change(function () {
             if ($(this).is(':checked')) {
+                startTimeContainer.hide();
                 endTimeContainer.hide();
                 $('#EndTime').val('');
+                $('#StartTimeTime').val('');
+                $('#EndTimeTime').val('');
             } else {
+                startTimeContainer.show();
                 endTimeContainer.show();
+            }
+        });
+
+        // Client-side validation
+        $.validator.addMethod("endTimeAfterStart", function (value, element) {
+            if ($('#IsAllDay').is(':checked')) return true;
+            var startDate = $('#StartTime').val();
+            var startTime = $('#StartTimeTime').val();
+            var endDate = $('#EndTime').val();
+            var endTime = value;
+            if (!startDate || !startTime || !endDate || !endTime) return true;
+            var startDateTime = new Date(startDate + 'T' + startTime);
+            var endDateTime = new Date(endDate + 'T' + endTime);
+            return endDateTime > startDateTime;
+        }, "End time must be after start time.");
+
+        $.validator.addMethod("requiredIfNotAllDay", function (value, element) {
+            return $('#IsAllDay').is(':checked') || !!(value && value.trim());
+        }, "This field is required for non-all-day events.");
+
+        $("#createForm").validate({
+            rules: {
+                StartTimeTime: { requiredIfNotAllDay: true },
+                EndTimeTime: { requiredIfNotAllDay: true, endTimeAfterStart: true }
+            },
+            errorPlacement: function (error, element) {
+                error.appendTo(element.closest('.col-md-6').find('.field-validation-error'));
             }
         });
     });

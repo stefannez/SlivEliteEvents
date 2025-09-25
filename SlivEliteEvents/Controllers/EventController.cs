@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SlivEliteEvents.Data;
 using SlivEliteEvents.Models;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -34,8 +35,8 @@ namespace SlivEliteEvents.Controllers
             {
                 e.Id,
                 e.Title,
-                Start = e.StartTime, // Keep as DateTime
-                End = e.EndTime,     // Keep as DateTime or null
+                Start = e.StartTime,
+                End = e.EndTime,
                 e.IsAllDay,
                 Description = e.Description,
                 e.Location,
@@ -49,8 +50,8 @@ namespace SlivEliteEvents.Controllers
             {
                 id = e.Id,
                 title = e.Title,
-                start = e.Start.ToString("o"), // ISO 8601 format
-                end = e.IsAllDay ? null : e.End?.ToString("o"), // Handle all-day events
+                start = e.Start.ToString("o"), // ISO 8601 for FullCalendar
+                end = e.IsAllDay ? null : e.End?.ToString("o"),
                 allDay = e.IsAllDay,
                 extendedProps = new
                 {
@@ -72,7 +73,11 @@ namespace SlivEliteEvents.Controllers
             if (DateTime.TryParse(start, out var startDate))
             {
                 model.StartTime = startDate;
-                ViewBag.StartDate = startDate;
+                ViewBag.StartDate = startDate.ToString("yyyy-MM-dd");
+            }
+            else
+            {
+                ViewBag.StartDate = DateTime.Today.ToString("yyyy-MM-dd");
             }
             return View(model);
         }
@@ -80,22 +85,69 @@ namespace SlivEliteEvents.Controllers
         // POST: Events/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Event eventModel)
+        public async Task<IActionResult> Create(Event eventModel, string StartTimeTime, string EndTimeTime)
         {
             if (eventModel.IsAllDay)
+            {
                 eventModel.EndTime = null;
+                // Clear time inputs to avoid validation
+                ModelState.Remove("StartTimeTime");
+                ModelState.Remove("EndTimeTime");
+            }
+            else
+            {
+                // Combine date and time for StartTime
+                if (!string.IsNullOrEmpty(StartTimeTime))
+                {
+                    if (DateTime.TryParse($"{eventModel.StartTime:yyyy-MM-dd} {StartTimeTime}", out var startDateTime))
+                    {
+                        eventModel.StartTime = startDateTime;
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("StartTimeTime", "Invalid start time format.");
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("StartTimeTime", "Start time is required for non-all-day events.");
+                }
+
+                // Combine date and time for EndTime
+                if (!string.IsNullOrEmpty(EndTimeTime) && eventModel.EndTime.HasValue)
+                {
+                    if (DateTime.TryParse($"{eventModel.EndTime.Value:yyyy-MM-dd} {EndTimeTime}", out var endDateTime))
+                    {
+                        eventModel.EndTime = endDateTime;
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("EndTimeTime", "Invalid end time format.");
+                    }
+                }
+                else if (!eventModel.EndTime.HasValue && !eventModel.IsAllDay)
+                {
+                    ModelState.AddModelError("EndTime", "End date is required for non-all-day events.");
+                }
+
+                // Validate EndTime is after StartTime
+                if (!eventModel.IsAllDay && eventModel.EndTime.HasValue && eventModel.EndTime <= eventModel.StartTime)
+                {
+                    ModelState.AddModelError("EndTime", "End time must be after start time.");
+                }
+            }
 
             if (ModelState.IsValid)
             {
+                eventModel.CreatedAt = DateTime.Now;
                 _context.Add(eventModel);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
 
-            // Log validation errors for debugging
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
             Console.WriteLine("Validation errors: " + string.Join(", ", errors));
-
+            ViewBag.StartDate = eventModel.StartTime.ToString("yyyy-MM-dd");
             return View(eventModel);
         }
 
@@ -105,18 +157,65 @@ namespace SlivEliteEvents.Controllers
             if (id == null) return NotFound();
             var eventModel = await _context.Events.FindAsync(id);
             if (eventModel == null) return NotFound();
+            ViewBag.StartDate = eventModel.StartTime.ToString("yyyy-MM-dd");
             return View(eventModel);
         }
 
         // POST: Events/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Event eventModel)
+        public async Task<IActionResult> Edit(int id, Event eventModel, string StartTimeTime, string EndTimeTime)
         {
             if (id != eventModel.Id) return NotFound();
 
             if (eventModel.IsAllDay)
+            {
                 eventModel.EndTime = null;
+                ModelState.Remove("StartTimeTime");
+                ModelState.Remove("EndTimeTime");
+            }
+            else
+            {
+                // Combine date and time for StartTime
+                if (!string.IsNullOrEmpty(StartTimeTime))
+                {
+                    if (DateTime.TryParse($"{eventModel.StartTime:yyyy-MM-dd} {StartTimeTime}", out var startDateTime))
+                    {
+                        eventModel.StartTime = startDateTime;
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("StartTimeTime", "Invalid start time format.");
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("StartTimeTime", "Start time is required for non-all-day events.");
+                }
+
+                // Combine date and time for EndTime
+                if (!string.IsNullOrEmpty(EndTimeTime) && eventModel.EndTime.HasValue)
+                {
+                    if (DateTime.TryParse($"{eventModel.EndTime.Value:yyyy-MM-dd} {EndTimeTime}", out var endDateTime))
+                    {
+                        eventModel.EndTime = endDateTime;
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("EndTimeTime", "Invalid end time format.");
+                    }
+                }
+                else if (!eventModel.EndTime.HasValue && !eventModel.IsAllDay)
+                {
+                    ModelState.AddModelError("EndTime", "End date is required for non-all-day events.");
+                }
+
+                // Validate EndTime is after StartTime
+                if (!eventModel.IsAllDay && eventModel.EndTime.HasValue && eventModel.EndTime <= eventModel.StartTime)
+                {
+                    ModelState.AddModelError("EndTime", "End time must be after start time.");
+                }
+            }
 
             if (ModelState.IsValid)
             {
@@ -133,10 +232,9 @@ namespace SlivEliteEvents.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Log validation errors for debugging
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
             Console.WriteLine("Validation errors: " + string.Join(", ", errors));
-
+            ViewBag.StartDate = eventModel.StartTime.ToString("yyyy-MM-dd");
             return View(eventModel);
         }
 

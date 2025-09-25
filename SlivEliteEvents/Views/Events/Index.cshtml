@@ -74,6 +74,11 @@ ViewData["Title"] = "Event Calendar";
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
+                eventTimeFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                },
                 events: {
                     url: '/Events/GetEvents',
                     extraParams: function () {
@@ -89,8 +94,12 @@ ViewData["Title"] = "Event Calendar";
                         $('#eventTitle').text(info.event.title);
                         $('#eventDescription').text(info.event.extendedProps.description || 'N/A');
                         $('#eventDate').text(info.event.allDay ?
-                            info.event.start.toLocaleDateString() + ' (All Day)' :
-                            info.event.start.toLocaleString() + (info.event.end ? ' - ' + info.event.end.toLocaleString() : ''));
+                            info.event.start.toLocaleDateString('mk-MK', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' (All Day)' :
+                            info.event.start.toLocaleDateString('mk-MK', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
+                            info.event.start.toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit', hour12: false }) +
+                            (info.event.end ? ' - ' +
+                                info.event.end.toLocaleDateString('mk-MK', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
+                                info.event.end.toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit', hour12: false }) : ''));
                         $('#eventLocation').text(info.event.extendedProps.location);
                         $('#eventGuests').text(info.event.extendedProps.guestCapacity);
                         $('#eventContact').text(info.event.extendedProps.contactPhone || 'N/A');
@@ -130,7 +139,7 @@ ViewData["Title"] = "Event Calendar";
                                 .catch(error => console.error('Error deleting event:', error));
                         };
                     };
-                    info.el.appendChild(deleteBtn);
+                    // info.el.appendChild(deleteBtn);
                 }
             });
 
