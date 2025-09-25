@@ -24,31 +24,57 @@ namespace SlivEliteEvents.Controllers
 
         // GET: Events/GetEvents (for FullCalendar)
         [HttpGet]
-        public async Task<IActionResult> GetEvents()
+        public async Task<IActionResult> GetEvents(string status)
         {
-            var events = await _context.Events
-                .Select(e => new
+            var query = _context.Events.AsQueryable();
+            if (!string.IsNullOrEmpty(status))
+                query = query.Where(e => e.Status == status);
+
+            var events = await query.Select(e => new
+            {
+                e.Id,
+                e.Title,
+                Start = e.StartTime, // Keep as DateTime
+                End = e.EndTime,     // Keep as DateTime or null
+                e.IsAllDay,
+                Description = e.Description,
+                e.Location,
+                e.GuestCapacity,
+                e.ContactPhone,
+                e.Status
+            }).ToListAsync();
+
+            // Format dates in memory for FullCalendar
+            var formattedEvents = events.Select(e => new
+            {
+                id = e.Id,
+                title = e.Title,
+                start = e.Start.ToString("o"), // ISO 8601 format
+                end = e.IsAllDay ? null : e.End?.ToString("o"), // Handle all-day events
+                allDay = e.IsAllDay,
+                extendedProps = new
                 {
-                    id = e.Id,
-                    title = e.Title,
-                    start = e.StartTime,
-                    end = e.EndTime,
-                    allDay = e.IsAllDay,
                     description = e.Description,
                     location = e.Location,
                     guestCapacity = e.GuestCapacity,
                     contactPhone = e.ContactPhone,
                     status = e.Status
-                })
-                .ToListAsync();
+                }
+            });
 
-            return Json(events);
+            return Json(formattedEvents);
         }
 
         // GET: Events/Create
-        public IActionResult Create()
+        public IActionResult Create(string start)
         {
-            return View();
+            var model = new Event();
+            if (DateTime.TryParse(start, out var startDate))
+            {
+                model.StartTime = startDate;
+                ViewBag.StartDate = startDate;
+            }
+            return View(model);
         }
 
         // POST: Events/Create
@@ -56,12 +82,20 @@ namespace SlivEliteEvents.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Event eventModel)
         {
+            if (eventModel.IsAllDay)
+                eventModel.EndTime = null;
+
             if (ModelState.IsValid)
             {
                 _context.Add(eventModel);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+
+            // Log validation errors for debugging
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+            Console.WriteLine("Validation errors: " + string.Join(", ", errors));
+
             return View(eventModel);
         }
 
@@ -81,6 +115,9 @@ namespace SlivEliteEvents.Controllers
         {
             if (id != eventModel.Id) return NotFound();
 
+            if (eventModel.IsAllDay)
+                eventModel.EndTime = null;
+
             if (ModelState.IsValid)
             {
                 try
@@ -95,7 +132,34 @@ namespace SlivEliteEvents.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
+
+            // Log validation errors for debugging
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+            Console.WriteLine("Validation errors: " + string.Join(", ", errors));
+
             return View(eventModel);
+        }
+
+        // GET: Events/List
+        public async Task<IActionResult> List(string sortOrder)
+        {
+            ViewData["DateSortParm"] = sortOrder == "date" ? "date_desc" : "date";
+            var events = from e in _context.Events select e;
+
+            switch (sortOrder)
+            {
+                case "date":
+                    events = events.OrderBy(e => e.StartTime);
+                    break;
+                case "date_desc":
+                    events = events.OrderByDescending(e => e.StartTime);
+                    break;
+                default:
+                    events = events.OrderBy(e => e.StartTime);
+                    break;
+            }
+
+            return View(await events.ToListAsync());
         }
 
         // POST: Events/Delete/5

@@ -1,10 +1,12 @@
 @model SlivEliteEvents.Models.Event
 @{
-    ViewData["Title"] = "Create Event";
-    var startDate = ViewBag.StartDate != null ? ViewBag.StartDate.ToString("yyyy-MM-dd") : DateTime.Today.ToString("yyyy-MM-dd");
+    ViewData["Title"] = "Edit Event";
+    // Prepare EndTime formatted value if needed
+    string endTimeValue = Model.EndTime.HasValue ? Model.EndTime.Value.ToString("yyyy-MM-dd") : "";
 }
-<h1>Create Event</h1>
+<h1>Edit Event</h1>
 <form asp-action="Edit">
+    <input type="hidden" asp-for="Id" />
     <div class="mb-3">
         <label asp-for="Title" class="form-label"></label>
         <input asp-for="Title" class="form-control" />
@@ -16,12 +18,12 @@
     </div>
     <div class="mb-3">
         <label asp-for="StartTime" class="form-label"></label>
-        <input type="date" asp-for="StartTime" class="form-control" value="@startDate" />
+        <input type="date" asp-for="StartTime" class="form-control" value="@Model.StartTime.ToString("yyyy-MM-dd")" />
         <span asp-validation-for="StartTime" class="text-danger"></span>
     </div>
-    <div class="mb-3">
+    <div class="mb-3" id="endTimeContainer">
         <label asp-for="EndTime" class="form-label"></label>
-        <input type="date" asp-for="EndTime" class="form-control" />
+        <input type="date" asp-for="EndTime" class="form-control" value="@endTimeValue" />
     </div>
     <div class="mb-3">
         <label asp-for="IsAllDay" class="form-label"></label>
@@ -44,15 +46,36 @@
     <div class="mb-3">
         <label asp-for="Status" class="form-label"></label>
         <select asp-for="Status" class="form-control">
-            <option value="Pending">Pending</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Completed">Completed</option>
+            <option value="Pending" selected="@(Model.Status == "Pending")">Pending</option>
+            <option value="Confirmed" selected="@(Model.Status == "Confirmed")">Confirmed</option>
+            <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
         </select>
     </div>
-    <button type="submit" class="btn btn-primary">Create</button>
+    <button type="submit" class="btn btn-primary">Save Changes</button>
     <a asp-action="Index" class="btn btn-secondary">Back to Calendar</a>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(function () {
+            const endTimeContainer = $('#endTimeContainer');
+            const isAllDayCheckbox = $('#IsAllDay');
+
+            // Initialize visibility based on IsAllDay
+            if (isAllDayCheckbox.is(':checked')) {
+                endTimeContainer.hide();
+            }
+
+            // Toggle EndTime visibility
+            isAllDayCheckbox.change(function () {
+                if ($(this).is(':checked')) {
+                    endTimeContainer.hide();
+                    $('#EndTime').val(''); // Clear EndTime when all-day is selected
+                } else {
+                    endTimeContainer.show();
+                }
+            });
+        });
+    </script>
 }

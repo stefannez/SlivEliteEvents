@@ -1,10 +1,21 @@
 @model SlivEliteEvents.Models.Event
 @{
-    ViewData["Title"] = "Create Event";
-    var startDate = ViewBag.StartDate != null ? ViewBag.StartDate.ToString("yyyy-MM-dd") : DateTime.Today.ToString("yyyy-MM-dd");
+ViewData["Title"] = "Create Event";
+var startDate = ViewBag.StartDate != null ? ViewBag.StartDate.ToString("yyyy-MM-dd") : DateTime.Today.ToString("yyyy-MM-dd");
 }
 <h1>Create Event</h1>
-<form asp-action="Create">
+@if (!ViewData.ModelState.IsValid)
+{
+<div class="alert alert-danger">
+    <ul>
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+        <li>@error.ErrorMessage</li>
+        }
+    </ul>
+</div>
+}
+<form asp-action="Create" method="post">
     <div class="mb-3">
         <label asp-for="Title" class="form-label"></label>
         <input asp-for="Title" class="form-control" />
@@ -13,19 +24,23 @@
     <div class="mb-3">
         <label asp-for="Description" class="form-label"></label>
         <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="StartTime" class="form-label"></label>
         <input type="date" asp-for="StartTime" class="form-control" value="@startDate" />
         <span asp-validation-for="StartTime" class="text-danger"></span>
     </div>
-    <div class="mb-3">
+    .space-around
+    <div class="mb-3" id="endTimeContainer">
         <label asp-for="EndTime" class="form-label"></label>
         <input type="date" asp-for="EndTime" class="form-control" />
+        <span asp-validation-for="EndTime" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="IsAllDay" class="form-label"></label>
         <input asp-for="IsAllDay" type="checkbox" class="form-check-input" />
+        <span asp-validation-for="IsAllDay" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="Location" class="form-label"></label>
@@ -40,6 +55,7 @@
     <div class="mb-3">
         <label asp-for="ContactPhone" class="form-label"></label>
         <input asp-for="ContactPhone" class="form-control" />
+        <span asp-validation-for="ContactPhone" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="Status" class="form-label"></label>
@@ -48,11 +64,33 @@
             <option value="Confirmed">Confirmed</option>
             <option value="Completed">Completed</option>
         </select>
+        <span asp-validation-for="Status" class="text-danger"></span>
     </div>
     <button type="submit" class="btn btn-primary">Create</button>
-    <a asp-action="Index" class="btn btn-secondary">Back to Calendar</a>
+    <a asp-action="Index" class="nav-link btn btn-secondary">Back to Calendar</a>
 </form>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+<partial name="_ValidationScriptsPartial" />
+<script>
+    $(function () {
+        const endTimeContainer = $('#endTimeContainer');
+        const isAllDayCheckbox = $('#IsAllDay');
+
+        // Initialize visibility
+        if (isAllDayCheckbox.is(':checked')) {
+            endTimeContainer.hide();
+        }
+
+        // Toggle EndTime visibility
+        isAllDayCheckbox.change(function () {
+            if ($(this).is(':checked')) {
+                endTimeContainer.hide();
+                $('#EndTime').val('');
+            } else {
+                endTimeContainer.show();
+            }
+        });
+    });
+</script>
 }

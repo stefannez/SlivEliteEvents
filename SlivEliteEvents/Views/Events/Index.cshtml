@@ -1,9 +1,42 @@
 @model IEnumerable<SlivEliteEvents.Models.Event>
 @{
-    ViewData["Title"] = "Event Calendar";
+ViewData["Title"] = "Event Calendar";
 }
 <h1>Event Calendar</h1>
-<div id="calendar"></div>
+<div class="mb-3">
+    <select id="statusFilter" class="form-control w-auto">
+        <option value="">All Events</option>
+        <option value="Pending">Pending</option>
+        <option value="Confirmed">Confirmed</option>
+        <option value="Completed">Completed</option>
+    </select>
+</div>
+<div id="calendar" class="calendar-container"></div>
+
+<!-- Event Details Modal -->
+<div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventDetailsModalLabel">Event Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Title:</strong> <span id="eventTitle"></span></p>
+                <p><strong>Description:</strong> <span id="eventDescription"></span></p>
+                <p><strong>Date:</strong> <span id="eventDate"></span></p>
+                <p><strong>Location:</strong> <span id="eventLocation"></span></p>
+                <p><strong>Guests:</strong> <span id="eventGuests"></span></p>
+                <p><strong>Contact:</strong> <span id="eventContact"></span></p>
+                <p><strong>Status:</strong> <span id="eventStatus"></span></p>
+            </div>
+            <div class="modal-footer">
+                <a id="editEvent" class="btn btn-primary">Edit</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
@@ -25,9 +58,15 @@
 </div>
 
 @section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
             var calendarEl = document.getElementById('calendar');
+            if (!calendarEl) {
+                console.error('Calendar element not found');
+                return;
+            }
+
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 headerToolbar: {
@@ -35,21 +74,39 @@
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                 },
-                events: '/Events/GetEvents',
+                events: {
+                    url: '/Events/GetEvents',
+                    extraParams: function () {
+                        return { status: $('#statusFilter').val() };
+                    },
+                    failure: function (error) {
+                        console.error('Error fetching events:', error);
+                        alert('Failed to load events. Check the console for details.');
+                    }
+                },
                 eventClick: function (info) {
-                    // Show event details in an alert or modal
-                    alert('Event: ' + info.event.title + '\nDescription: ' + (info.event.extendedProps.description || 'N/A') +
-                        '\nLocation: ' + info.event.extendedProps.location +
-                        '\nGuests: ' + info.event.extendedProps.guestCapacity +
-                        '\nContact: ' + info.event.extendedProps.contactPhone +
-                        '\nStatus: ' + info.event.extendedProps.status);
+                    try {
+                        $('#eventTitle').text(info.event.title);
+                        $('#eventDescription').text(info.event.extendedProps.description || 'N/A');
+                        $('#eventDate').text(info.event.allDay ?
+                            info.event.start.toLocaleDateString() + ' (All Day)' :
+                            info.event.start.toLocaleString() + (info.event.end ? ' - ' + info.event.end.toLocaleString() : ''));
+                        $('#eventLocation').text(info.event.extendedProps.location);
+                        $('#eventGuests').text(info.event.extendedProps.guestCapacity);
+                        $('#eventContact').text(info.event.extendedProps.contactPhone || 'N/A');
+                        $('#eventStatus').text(info.event.extendedProps.status);
+                        $('#editEvent').attr('href', '/Events/Edit/' + info.event.id);
+
+                        var detailsModal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+                        detailsModal.show();
+                    } catch (e) {
+                        console.error('Error in eventClick:', e);
+                    }
                 },
                 dateClick: function (info) {
-                    // Redirect to Create view with selected date
                     window.location.href = '/Events/Create?start=' + info.dateStr;
                 },
                 eventDidMount: function (info) {
-                    // Add delete button to event
                     var deleteBtn = document.createElement('button');
                     deleteBtn.innerHTML = 'Delete';
                     deleteBtn.className = 'btn btn-sm btn-danger';
@@ -57,20 +114,35 @@
                         var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
                         modal.show();
                         document.getElementById('confirmDelete').onclick = function () {
-                            fetch('/Events/Delete/' + info.event.id, { method: 'POST' })
+                            fetch('/Events/Delete/' + info.event.id, {
+                                method: 'POST',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            })
                                 .then(response => response.json())
                                 .then(data => {
                                     if (data.success) {
                                         info.event.remove();
                                         modal.hide();
+                                    } else {
+                                        alert('Failed to delete event.');
                                     }
-                                });
+                                })
+                                .catch(error => console.error('Error deleting event:', error));
                         };
                     };
                     info.el.appendChild(deleteBtn);
                 }
             });
+
             calendar.render();
+        } catch (e) {
+            console.error('Error initializing calendar:', e);
+            alert('Failed to initialize calendar. Check the console for details.');
+        }
+
+        $('#statusFilter').change(function () {
+            calendar.refetchEvents();
         });
-    </script>
+    });
+</script>
 }

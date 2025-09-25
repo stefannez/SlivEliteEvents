@@ -143,3 +143,4 @@
 /Users/lazarov/Public/SlivEliteEvents/SlivEliteEvents/obj/Debug/net8.0/SlivEliteEvents.pdb
 /Users/lazarov/Public/SlivEliteEvents/SlivEliteEvents/obj/Debug/net8.0/SlivEliteEvents.genruntimeconfig.cache
 /Users/lazarov/Public/SlivEliteEvents/SlivEliteEvents/obj/Debug/net8.0/ref/SlivEliteEvents.dll
+/Users/lazarov/Public/SlivEliteEvents/SlivEliteEvents/obj/Debug/net8.0/SlivEliteEvents.sourcelink.json

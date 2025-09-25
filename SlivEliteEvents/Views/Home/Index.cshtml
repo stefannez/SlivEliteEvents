@@ -1,8 +1,23 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Welcome to Sliv Elite Events";
 }
-
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container text-center my-5">
+    <h1 class="display-4">Welcome to Sliv Elite Events</h1>
+    <p class="lead">Your premier destination for unforgettable weddings, baptisms, birthdays, and more!</p>
+    <img src="https://via.placeholder.com/800x400?text=Sliv+Elite+Events" alt="Sliv Elite Events" class="img-fluid rounded my-4" style="max-width: 800px;" />
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <p>
+                At Sliv Elite Events, we specialize in creating memorable experiences for your special occasions. 
+                Our venue offers a stunning setting for weddings, baptisms, birthdays, and other celebrations, 
+                with personalized planning and top-notch service to ensure every moment is perfect.
+            </p>
+            <p>
+                Use our intuitive event management system to plan and track your events with ease. 
+                Explore our <a asp-controller="Events" asp-action="Index">calendar</a> to check availability 
+                or <a asp-controller="Events" asp-action="Create">book your event</a> today!
+            </p>
+        </div>
+    </div>
+    <a asp-controller="Events" asp-action="Create" class="btn btn-primary btn-lg mt-3">Plan Your Event Now</a>
 </div>
