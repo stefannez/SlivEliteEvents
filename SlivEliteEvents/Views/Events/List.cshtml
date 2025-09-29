@@ -1,0 +1,160 @@
+@model IEnumerable<SlivEliteEvents.Models.Event>
+@{
+ViewData["Title"] = "Сите настани";
+int currentPage = ViewBag.CurrentPage ?? 1;
+int totalPages = ViewBag.TotalPages ?? 1;
+string searchString = ViewBag.CurrentSearch;
+string sortOrder = ViewBag.CurrentSort;
+}
+<h1>Сите настани</h1>
+<div class="mb-3">
+    <div class="input-group flex-column flex-md-row">
+        <input type="text" id="searchInput" class="form-control search-input mb-2 mb-md-0" placeholder="Внесете наслов за пребарување" aria-label="Пребарај по наслов" value="@searchString">
+        <button class="btn btn-primary mb-2 mb-md-0" type="button" id="searchButton">Пребарај</button>
+        <button class="btn btn-secondary" type="button" id="clearSearchButton">Исчисти</button>
+    </div>
+</div>
+<div class="table-responsive">
+    <table class="table table-striped" id="eventsTable">
+        <thead>
+        <tr>
+            <th class="col-date">
+                <a asp-action="List" asp-route-sortOrder="@ViewData["DateSortParm"]" asp-route-page="@currentPage" asp-route-searchString="@searchString">Датум</a>
+            </th>
+            <th>Наслов</th>
+            <th class="d-none d-md-table-cell">Опис</th>
+            <th class="d-none d-md-table-cell">Локација</th>
+            <th class="d-none d-lg-table-cell">Гости</th>
+            <th class="d-none d-lg-table-cell">Контакт</th>
+            <th>Статус</th>
+            <th>Акции</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+        <tr>
+            <td>
+                @if (item.IsAllDay)
+                {
+                @item.StartTime.ToString("dd.MM.yyyy") <span>(Цел ден)</span>
+                }
+                else
+                {
+                @item.StartTime.ToString("dd.MM.yyyy HH:mm")
+                if (item.EndTime.HasValue)
+                {
+                <span> - @item.EndTime.Value.ToString("dd.MM.yyyy HH:mm")</span>
+                }
+                }
+            </td>
+            <td>@item.Title</td>
+            <td class="d-none d-md-table-cell">@item.Description</td>
+            <td class="d-none d-md-table-cell">@item.Location</td>
+            <td class="d-none d-lg-table-cell">@item.GuestCapacity</td>
+            <td class="d-none d-lg-table-cell">@item.ContactPhone</td>
+            <td>
+                @(item.Status == "Pending" ? "Во исчекување" :
+                item.Status == "Confirmed" ? "Потврдено" :
+                item.Status == "Completed" ? "Завршено" : item.Status)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary me-1">Уреди</a>
+                <button class="btn btn-sm btn-danger delete-btn" data-id="@item.Id" data-bs-toggle="modal" data-bs-target="#deleteModal">Избриши</button>
+            </td>
+        </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination Controls -->
+@if (totalPages > 1)
+{
+<nav aria-label="Пагинација">
+    <ul class="pagination justify-content-center">
+        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+            <a class="page-link" asp-action="List" asp-route-page="@(currentPage - 1)" asp-route-sortOrder="@sortOrder" asp-route-searchString="@searchString">Претходна</a>
+        </li>
+        @for (int i = 1; i <= totalPages; i++)
+        {
+        <li class="page-item @(i == currentPage ? "active" : "")">
+            <a class="page-link" asp-action="List" asp-route-page="@i" asp-route-sortOrder="@sortOrder" asp-route-searchString="@searchString">@i</a>
+        </li>
+        }
+        <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+            <a class="page-link" asp-action="List" asp-route-page="@(currentPage + 1)" asp-route-sortOrder="@sortOrder" asp-route-searchString="@searchString">Следна</a>
+        </li>
+    </ul>
+</nav>
+}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Потврди бришење</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Дали сте сигурни дека сакате да го избришете овој настан?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Откажи</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Избриши</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    $(document).ready(function () {
+        
+        $('#searchButton').click(function () {
+            var searchTerm = $('#searchInput').val();
+            window.location.href = '@Url.Action("List", new { sortOrder = sortOrder, page = 1 })&searchString=' + encodeURIComponent(searchTerm);
+        });
+
+        
+        $('#clearSearchButton').click(function () {
+            $('#searchInput').val('');
+            window.location.href = '@Url.Action("List", new { sortOrder = sortOrder, page = 1 })';
+        });
+
+        
+        $('#searchInput').on('keypress', function (e) {
+            if (e.which === 13) {
+                $('#searchButton').click();
+            }
+        });
+
+        
+        $('.delete-btn').click(function () {
+            var eventId = $(this).data('id');
+            var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            modal.show();
+            $('#confirmDelete').off('click').on('click', function () {
+                $.ajax({
+                    url: '/Events/Delete/' + eventId,
+                    type: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    success: function (data) {
+                        if (data.success) {
+                            modal.hide();
+                            window.location.reload();
+                        } else {
+                            alert('Неуспешно бришење на настанот.');
+                        }
+                    },
+                    error: function (error) {
+                        console.error('Error deleting event:', error);
+                        alert('Грешка при бришење на настанот. Проверете ја конзолата за детали.');
+                    }
+                });
+            });
+        });
+    });
+</script>
+}

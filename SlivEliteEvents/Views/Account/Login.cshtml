@@ -1,0 +1,32 @@
+@model dynamic
+@{
+    ViewData["Title"] = "Најави се";
+}
+<div class="row justify-content-center login-container">
+    <div class="col-md-6 col-lg-4">
+        <h2 class="text-center mb-4">Најави се</h2>
+        <form asp-action="Login" method="post">
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required />
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Лозинка</label>
+                <input type="password" class="form-control" id="password" name="password" required />
+            </div>
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <p>@error.ErrorMessage</p>
+                    }
+                </div>
+            }
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Најави се</button>
+            </div>
+        </form>
+    </div>
+</div>
