@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SlivEliteEvents.Data;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace SlivEliteEvents.Controllers
 {
+    [Authorize(Roles = "Manager")]
     public class EventsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -104,7 +106,6 @@ namespace SlivEliteEvents.Controllers
             if (eventModel.IsAllDay)
             {
                 eventModel.EndTime = null;
-                // Clear time inputs to avoid validation
                 ModelState.Remove("StartTimeTime");
                 ModelState.Remove("EndTimeTime");
             }
@@ -119,12 +120,12 @@ namespace SlivEliteEvents.Controllers
                     }
                     else
                     {
-                        ModelState.AddModelError("StartTimeTime", "Invalid start time format.");
+                        ModelState.AddModelError("StartTimeTime", "Невалиден формат за почетно време.");
                     }
                 }
                 else
                 {
-                    ModelState.AddModelError("StartTimeTime", "Start time is required for non-all-day events.");
+                    ModelState.AddModelError("StartTimeTime", "Почетното време е задолжително за нецелодневни настани.");
                 }
 
                 // Combine date and time for EndTime
@@ -136,18 +137,18 @@ namespace SlivEliteEvents.Controllers
                     }
                     else
                     {
-                        ModelState.AddModelError("EndTimeTime", "Invalid end time format.");
+                        ModelState.AddModelError("EndTimeTime", "Невалиден формат за крајно време.");
                     }
                 }
                 else if (!eventModel.EndTime.HasValue && !eventModel.IsAllDay)
                 {
-                    ModelState.AddModelError("EndTime", "End date is required for non-all-day events.");
+                    ModelState.AddModelError("EndTime", "Крајниот датум е задолжителен за нецелодневни настани.");
                 }
 
                 // Validate EndTime is after StartTime
                 if (!eventModel.IsAllDay && eventModel.EndTime.HasValue && eventModel.EndTime <= eventModel.StartTime)
                 {
-                    ModelState.AddModelError("EndTime", "End time must be after start time.");
+                    ModelState.AddModelError("EndTime", "Крајното време мора да биде после почетното време.");
                 }
             }
 
@@ -199,12 +200,12 @@ namespace SlivEliteEvents.Controllers
                     }
                     else
                     {
-                        ModelState.AddModelError("StartTimeTime", "Invalid start time format.");
+                        ModelState.AddModelError("StartTimeTime", "Невалиден формат за почетно време.");
                     }
                 }
                 else
                 {
-                    ModelState.AddModelError("StartTimeTime", "Start time is required for non-all-day events.");
+                    ModelState.AddModelError("StartTimeTime", "Почетното време е задолжително за нецелодневни настани.");
                 }
 
                 // Combine date and time for EndTime
@@ -216,18 +217,18 @@ namespace SlivEliteEvents.Controllers
                     }
                     else
                     {
-                        ModelState.AddModelError("EndTimeTime", "Invalid end time format.");
+                        ModelState.AddModelError("EndTimeTime", "Невалиден формат за крајно време.");
                     }
                 }
                 else if (!eventModel.EndTime.HasValue && !eventModel.IsAllDay)
                 {
-                    ModelState.AddModelError("EndTime", "End date is required for non-all-day events.");
+                    ModelState.AddModelError("EndTime", "Крајниот датум е задолжителен за нецелодневни настани.");
                 }
 
                 // Validate EndTime is after StartTime
                 if (!eventModel.IsAllDay && eventModel.EndTime.HasValue && eventModel.EndTime <= eventModel.StartTime)
                 {
-                    ModelState.AddModelError("EndTime", "End time must be after start time.");
+                    ModelState.AddModelError("EndTime", "Крајното време мора да биде после почетното време.");
                 }
             }
 
@@ -253,25 +254,38 @@ namespace SlivEliteEvents.Controllers
         }
 
         // GET: Events/List
-        public async Task<IActionResult> List(string sortOrder)
+        public IActionResult List(string sortOrder, string searchString, int page = 1, int pageSize = 10)
         {
             ViewData["DateSortParm"] = sortOrder == "date" ? "date_desc" : "date";
-            var events = from e in _context.Events select e;
+            ViewData["CurrentSort"] = sortOrder;
+            ViewData["CurrentSearch"] = searchString;
 
-            switch (sortOrder)
+            var events = _context.Events.AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrEmpty(searchString))
             {
-                case "date":
-                    events = events.OrderBy(e => e.StartTime);
-                    break;
-                case "date_desc":
-                    events = events.OrderByDescending(e => e.StartTime);
-                    break;
-                default:
-                    events = events.OrderBy(e => e.StartTime);
-                    break;
+                events = events.Where(e => e.Title.Contains(searchString));
             }
 
-            return View(await events.ToListAsync());
+            // Apply sorting
+            events = sortOrder == "date" 
+                ? events.OrderBy(e => e.StartTime) 
+                : sortOrder == "date_desc" 
+                    ? events.OrderByDescending(e => e.StartTime) 
+                    : events.OrderBy(e => e.StartTime);
+
+            // Pagination
+            int totalEvents = events.Count();
+            int totalPages = (int)Math.Ceiling(totalEvents / (double)pageSize);
+            page = Math.Max(1, Math.Min(page, totalPages)); // Ensure valid page
+            var paginatedEvents = events.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            ViewBag.TotalPages = totalPages;
+            ViewBag.CurrentPage = page;
+            ViewBag.PageSize = pageSize;
+
+            return View(paginatedEvents);
         }
 
         // POST: Events/Delete/5

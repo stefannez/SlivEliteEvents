@@ -1,9 +1,9 @@
 @model SlivEliteEvents.Models.Event
 @{
-ViewData["Title"] = "Create Event";
+ViewData["Title"] = "Креирај настан";
 var startDate = ViewBag.StartDate != null ? ViewBag.StartDate : DateTime.Today.ToString("yyyy-MM-dd");
 }
-<h1>Create Event</h1>
+<h1>Креирај настан</h1>
 @* @if (!ViewData.ModelState.IsValid) *@
 @* { *@
 @* <div class="alert alert-danger"> *@
@@ -17,17 +17,17 @@ var startDate = ViewBag.StartDate != null ? ViewBag.StartDate : DateTime.Today.T
 @* } *@
 <form id="createForm" asp-action="Create" method="post">
     <div class="mb-3">
-        <label asp-for="Title" class="form-label required"></label>
+        <label asp-for="Title" class="form-label required">Наслов</label>
         <input asp-for="Title" class="form-control" />
         <span asp-validation-for="Title" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="Description" class="form-label"></label>
+        <label asp-for="Description" class="form-label">Опис</label>
         <textarea asp-for="Description" class="form-control" rows="4"></textarea>
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="StartTime" class="form-label required"></label>
+        <label asp-for="StartTime" class="form-label required">Почнува</label>
         <div class="row">
             <div class="col-md-6">
                 <input type="date" asp-for="StartTime" class="form-control" value="@startDate" />
@@ -40,7 +40,7 @@ var startDate = ViewBag.StartDate != null ? ViewBag.StartDate : DateTime.Today.T
         </div>
     </div>
     <div class="mb-3" id="endTimeContainer">
-        <label asp-for="EndTime" class="form-label"></label>
+        <label asp-for="EndTime" class="form-label">Завршува</label>
         <div class="row">
             <div class="col-md-6">
                 <input type="date" asp-for="EndTime" class="form-control" />
@@ -53,36 +53,36 @@ var startDate = ViewBag.StartDate != null ? ViewBag.StartDate : DateTime.Today.T
         </div>
     </div>
     <div class="mb-3">
-        <label asp-for="IsAllDay" class="form-label"></label>
+        <label asp-for="IsAllDay" class="form-label">Целодневен</label>
         <input asp-for="IsAllDay" type="checkbox" class="form-check-input" />
         <span asp-validation-for="IsAllDay" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="Location" class="form-label required"></label>
+        <label asp-for="Location" class="form-label required">Локација</label>
         <input asp-for="Location" class="form-control" />
         <span asp-validation-for="Location" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="GuestCapacity" class="form-label required"></label>
+        <label asp-for="GuestCapacity" class="form-label required">Капацитет на гости</label>
         <input asp-for="GuestCapacity" class="form-control" type="number" />
         <span asp-validation-for="GuestCapacity" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="ContactPhone" class="form-label"></label>
+        <label asp-for="ContactPhone" class="form-label">Контакт телефон</label>
         <input asp-for="ContactPhone" class="form-control" />
         <span asp-validation-for="ContactPhone" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="Status" class="form-label required"></label>
+        <label asp-for="Status" class="form-label required">Статус</label>
         <select asp-for="Status" class="form-control">
-            <option value="Pending">Pending</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Completed">Completed</option>
+            <option value="Pending">Во исчекување</option>
+            <option value="Confirmed">Потврдено</option>
+            <option value="Completed">Завршено</option>
         </select>
         <span asp-validation-for="Status" class="text-danger"></span>
     </div>
-    <button type="submit" class="btn btn-primary">Create</button>
-    <a asp-action="Index" class="btn btn-secondary">Back to Calendar</a>
+    <button type="submit" class="btn btn-primary">Креирај</button>
+    <a asp-action="Index" class="btn btn-secondary">Назад до календар</a>
 </form>
 
 @section Scripts {
@@ -93,7 +93,7 @@ var startDate = ViewBag.StartDate != null ? ViewBag.StartDate : DateTime.Today.T
         const endTimeContainer = $('#endTimeContainer');
         const isAllDayCheckbox = $('#IsAllDay');
 
-        // Initialize visibility
+        
         if (isAllDayCheckbox.is(':checked')) {
             startTimeContainer.hide();
             endTimeContainer.hide();
@@ -102,7 +102,7 @@ var startDate = ViewBag.StartDate != null ? ViewBag.StartDate : DateTime.Today.T
             $('#EndTimeTime').val('');
         }
 
-        // Toggle time input visibility
+        
         isAllDayCheckbox.change(function () {
             if ($(this).is(':checked')) {
                 startTimeContainer.hide();
@@ -116,7 +116,7 @@ var startDate = ViewBag.StartDate != null ? ViewBag.StartDate : DateTime.Today.T
             }
         });
 
-        // Client-side validation
+        
         $.validator.addMethod("endTimeAfterStart", function (value, element) {
             if ($('#IsAllDay').is(':checked')) return true;
             var startDate = $('#StartTime').val();
@@ -127,11 +127,11 @@ var startDate = ViewBag.StartDate != null ? ViewBag.StartDate : DateTime.Today.T
             var startDateTime = new Date(startDate + 'T' + startTime);
             var endDateTime = new Date(endDate + 'T' + endTime);
             return endDateTime > startDateTime;
-        }, "End time must be after start time.");
+        }, "Крајното време мора да биде после почетното време.");
 
         $.validator.addMethod("requiredIfNotAllDay", function (value, element) {
             return $('#IsAllDay').is(':checked') || !!(value && value.trim());
-        }, "This field is required for non-all-day events.");
+        }, "Ова поле е задолжително за нецелодневни настани.");
 
         $("#createForm").validate({
             rules: {

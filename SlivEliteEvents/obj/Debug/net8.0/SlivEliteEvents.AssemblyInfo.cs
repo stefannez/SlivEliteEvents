@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SlivEliteEvents")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+88dbd97ca6fe37c9bb9ef8549b60296df998fa85")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2beb9d6dce6b1b459911b33232954b8121eaf3ac")]
 [assembly: System.Reflection.AssemblyProductAttribute("SlivEliteEvents")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SlivEliteEvents")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

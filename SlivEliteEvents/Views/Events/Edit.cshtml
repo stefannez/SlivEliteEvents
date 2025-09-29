@@ -1,11 +1,11 @@
 @model SlivEliteEvents.Models.Event
 @{
-ViewData["Title"] = "Edit Event";
+ViewData["Title"] = "Уреди настан";
 string endTimeValue = Model.EndTime.HasValue ? Model.EndTime.Value.ToString("yyyy-MM-dd") : "";
 string startTimeTime = Model.StartTime != default ? Model.StartTime.ToString("HH:mm") : "";
 string endTimeTime = Model.EndTime.HasValue ? Model.EndTime.Value.ToString("HH:mm") : "";
 }
-<h1>Edit Event</h1>
+<h1>Уреди настан</h1>
 @if (!ViewData.ModelState.IsValid)
 {
 <div class="alert alert-danger">
@@ -20,17 +20,17 @@ string endTimeTime = Model.EndTime.HasValue ? Model.EndTime.Value.ToString("HH:m
 <form id="editForm" asp-action="Edit" method="post">
     <input type="hidden" asp-for="Id" />
     <div class="mb-3">
-        <label asp-for="Title" class="form-label required"></label>
+        <label asp-for="Title" class="form-label required">Наслов</label>
         <input asp-for="Title" class="form-control" />
         <span asp-validation-for="Title" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="Description" class="form-label"></label>
+        <label asp-for="Description" class="form-label">Опис</label>
         <textarea asp-for="Description" class="form-control" rows="4"></textarea>
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="StartTime" class="form-label required"></label>
+        <label asp-for="StartTime" class="form-label required">Почнува</label>
         <div class="row">
             <div class="col-md-6">
                 <input type="date" asp-for="StartTime" class="form-control" value="@Model.StartTime.ToString("yyyy-MM-dd")" />
@@ -43,7 +43,7 @@ string endTimeTime = Model.EndTime.HasValue ? Model.EndTime.Value.ToString("HH:m
         </div>
     </div>
     <div class="mb-3" id="endTimeContainer">
-        <label asp-for="EndTime" class="form-label"></label>
+        <label asp-for="EndTime" class="form-label">Завршува</label>
         <div class="row">
             <div class="col-md-6">
                 <input type="date" asp-for="EndTime" class="form-control" value="@endTimeValue" />
@@ -56,36 +56,36 @@ string endTimeTime = Model.EndTime.HasValue ? Model.EndTime.Value.ToString("HH:m
         </div>
     </div>
     <div class="mb-3">
-        <label asp-for="IsAllDay" class="form-label"></label>
+        <label asp-for="IsAllDay" class="form-label">Целодневен</label>
         <input asp-for="IsAllDay" type="checkbox" class="form-check-input" />
         <span asp-validation-for="IsAllDay" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="Location" class="form-label required"></label>
+        <label asp-for="Location" class="form-label required">Локација</label>
         <input asp-for="Location" class="form-control" />
         <span asp-validation-for="Location" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="GuestCapacity" class="form-label required"></label>
+        <label asp-for="GuestCapacity" class="form-label required">Капацитет на гости</label>
         <input asp-for="GuestCapacity" class="form-control" type="number" />
         <span asp-validation-for="GuestCapacity" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="ContactPhone" class="form-label"></label>
+        <label asp-for="ContactPhone" class="form-label">Контакт телефон</label>
         <input asp-for="ContactPhone" class="form-control" />
         <span asp-validation-for="ContactPhone" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="Status" class="form-label required"></label>
+        <label asp-for="Status" class="form-label required">Статус</label>
         <select asp-for="Status" class="form-control">
-            <option value="Pending" selected="@(Model.Status == "Pending")">Pending</option>
-            <option value="Confirmed" selected="@(Model.Status == "Confirmed")">Confirmed</option>
-            <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
+            <option value="Pending" selected="@(Model.Status == "Pending")">Во исчекување</option>
+            <option value="Confirmed" selected="@(Model.Status == "Confirmed")">Потврдено</option>
+            <option value="Completed" selected="@(Model.Status == "Completed")">Завршено</option>
         </select>
         <span asp-validation-for="Status" class="text-danger"></span>
     </div>
-    <button type="submit" class="btn btn-primary">Save Changes</button>
-    <a asp-action="Index" class="btn btn-secondary">Back to Calendar</a>
+    <button type="submit" class="btn btn-primary">Зачувај промени</button>
+    <a asp-action="Index" class="btn btn-secondary">Назад до календар</a>
 </form>
 
 @section Scripts {
@@ -96,7 +96,7 @@ string endTimeTime = Model.EndTime.HasValue ? Model.EndTime.Value.ToString("HH:m
         const endTimeContainer = $('#endTimeContainer');
         const isAllDayCheckbox = $('#IsAllDay');
 
-        // Initialize visibility based on IsAllDay
+        
         if (isAllDayCheckbox.is(':checked')) {
             startTimeContainer.hide();
             endTimeContainer.hide();
@@ -105,7 +105,7 @@ string endTimeTime = Model.EndTime.HasValue ? Model.EndTime.Value.ToString("HH:m
             $('#EndTimeTime').val('');
         }
 
-        // Toggle time input visibility
+        
         isAllDayCheckbox.change(function () {
             if ($(this).is(':checked')) {
                 startTimeContainer.hide();
@@ -119,7 +119,7 @@ string endTimeTime = Model.EndTime.HasValue ? Model.EndTime.Value.ToString("HH:m
             }
         });
 
-        // Client-side validation
+        
         $.validator.addMethod("endTimeAfterStart", function (value, element) {
             if ($('#IsAllDay').is(':checked')) return true;
             var startDate = $('#StartTime').val();
@@ -130,11 +130,11 @@ string endTimeTime = Model.EndTime.HasValue ? Model.EndTime.Value.ToString("HH:m
             var startDateTime = new Date(startDate + 'T' + startTime);
             var endDateTime = new Date(endDate + 'T' + endTime);
             return endDateTime > startDateTime;
-        }, "End time must be after start time.");
+        }, "Крајното време мора да биде после почетното време.");
 
         $.validator.addMethod("requiredIfNotAllDay", function (value, element) {
             return $('#IsAllDay').is(':checked') || !!(value && value.trim());
-        }, "This field is required for non-all-day events.");
+        }, "Ова поле е задолжително за нецелодневни настани.");
 
         $("#editForm").validate({
             rules: {
